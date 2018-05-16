@@ -53,7 +53,7 @@ K2 <- ddply(
 K2 <- ddply( 
   K2, .(country), transform,
   # This assumes that the data is sorted
-  GROWNTH =  log(RGDPCH/PIB2)
+  GROWTH =  log(RGDPCH/PIB2)
 )
 #summary(K2$GROWNTH)
 
@@ -84,23 +84,23 @@ K2 <- mutate(K2, Destruction = log(n + 0.05 +0.05))
 names(K2)[names(K2) == 'isocode'] <- 'iso3c'
 
 
+#Creating our undervalue
+pdata <- pdata.frame(K2, index = c("country", "year"))
+Variable <- plm(log(RER) ~ log(RGDPCH),data = pdata, model = "within",effect = "time")
+pdata$RERHAT <- fixef(Variable)
+pdata <- mutate(pdata,  LOGUNDERVALUE = log(RER/RERHAT))
 
 
-
-
-
-
+#Merging with the world bank data
 wb_countries <- as.data.frame(wbcountries())
 wb_countries <- subset(wb_countries, region != "Aggregates")
 
 
-K3 <- merge(K2,wb_countries, by = "iso3c")
+K3 <- merge(pdata,wb_countries, by = "iso3c")
+summary(K3$LOGUNDERVALUE)
 
-K3 <- mutate(K3, RER = 1/pl_gdpo)
-K3 <- mutate(K3, RGDPCH = rgdpo/pop)
+
 #mtcars %>% mutate(diff_qsec = qsec - lag(qsec))
-
-K3 <- mutate(K3, GROWTH = log(rgdpo/lag(rgdpo)))
 
 library(quantmod)
 K3 <- mutate(K3, Status = derivedFactor(
@@ -116,21 +116,12 @@ pdata <- pdata.frame(K3, index = c("country", "year"))
 
 
 
-Variable <- plm(log(RER) ~ log(RGDPCH),data = pdata, model = "within",effect = "time")
-
-summary(Variable)
-
-pdata$RERHAT <- fixef(Variable)
-
-pdata <- mutate(pdata,  LOGUNDERVALUE = log(RER)- log(RERHAT))
-
-
 #DataSets
 
 pdataAll <- subset(pdata, country != "Iraq" & country != "Laos" & country != "Korea, Rep.")
 
 names(pdataAll)
-keeps <- c("RGDPCH", "GROWTH","year","region","income","LOGUNDERVALUE","country","Status")
+keeps <- c("RGDPCH", "GROWTH","year","region","income","LOGUNDERVALUE","country","Status","n","Destruction","Human","pop")
 pdataAll <- pdataAll[keeps]
 
 
@@ -302,7 +293,7 @@ summary(PanelAllDeveloping2004)
 library(sandwich)
 library(lmtest)
 
-PanelAll <- plm(form,data = pdataAllDeveloping2004, model = "within",effect = "twoways")
+PanelAll <- plm(form,data = pdataAll, model = "within",effect = "twoways")
 summary(PanelAll)
 
 
