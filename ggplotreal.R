@@ -3,8 +3,16 @@ library(WDI)
 library(dplyr)
 library(tidyr)
 library(data.table)
+library(wbstats)
+ok <- WDI_data
+new_wdi_cache <- WDIcache() 
 
-WDIsearch("exchange")
+wb_countries <- as.data.frame(wbcountries())
+wb_countries <- subset(wb_countries, region != "Aggregates")
+names(wb_countries)
+
+wb_countries <- wbcountries() 
+WDIsearch("extra")
 WDIsearch('exchange')
 WDIsearch('gdp.*capita.*constant')
 WDIsearch(
@@ -52,6 +60,11 @@ p3 <-
 print(p3)
 
 
+PL1 <- ggplot(data=K3, aes(K3$LOGUNDERVALUE, ..density..)) + geom_histogram(breaks=seq(-1.9, 1.9, by=0.1))
+
+  
+print(pl2)
+
 #datar <- subset(k6, year == 2016 &  income != "Aggregates")
 
 #Testes
@@ -59,5 +72,15 @@ pbgtest
 
 plmtest
 
+mean(K6$LOGUNDERVALUE)
 
+
+hist(K6$LOGUNDERVALUE,
+     probability=TRUE)
+
+
+
+
+K2 <- subset(K1, select=c(year,country,isocode,csh_m,csh_x,pop,emp,hc,csh_r))
+names(K2)[names(K2) == 'isocode'] <- 'iso3c'
 
